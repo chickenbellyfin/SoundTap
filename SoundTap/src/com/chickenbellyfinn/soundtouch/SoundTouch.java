@@ -33,7 +33,7 @@ public class SoundTouch {
 	private static final int PORT = 8090;
 	private static final String ADDRESS = "http://192.168.1.15";
 	
-	private static final String ACCOUNT = "isaiah_smith@bose.com";
+	private static final String ACCOUNT = "[DEEZER ACCOUNT NAME HERE]";
 	public static ContentItem getContentItem(String search){
 		ContentItem item = null;
 		HttpClient client = new DefaultHttpClient();
