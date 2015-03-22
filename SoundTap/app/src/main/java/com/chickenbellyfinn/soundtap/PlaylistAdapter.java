@@ -11,6 +11,9 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+/**
+ * Adapter to display ContentItems in the song list
+ */
 public class PlaylistAdapter extends ArrayAdapter<ContentItem>{
 
     private static final String TAG = PlaylistAdapter.class.getSimpleName();
@@ -41,6 +44,10 @@ public class PlaylistAdapter extends ArrayAdapter<ContentItem>{
 
     }
 
+    /**
+     * Add a ContentItem, ignore duplicates
+     * @param item
+     */
     @Override
     public void add(ContentItem item){
         for(int i = 0; i < getCount(); i++){

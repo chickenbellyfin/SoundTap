@@ -1,6 +1,5 @@
 package com.chickenbellyfinn.soundtap;
 
-
 import android.util.Log;
 
 import org.apache.http.HttpResponse;
@@ -24,7 +23,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 /**
- * Created by Akshay on 3/21/2015.
+ * Communicates with a SoundTouch speaker over HTTP
  */
 public class SoundTouch {
 
@@ -39,7 +38,11 @@ public class SoundTouch {
         url = String.format("http://%s:%d", address, PORT);
     }
 
-
+    /**
+     * Search for music in deezer.
+     * @param searchTerm Preferably the artist + track
+     * @return A ContentItem containing the artist, track, albumart url, and ContentItem XML that can be used to play music.
+     */
     public ContentItem search(String searchTerm){
         ContentItem item = null;
         HttpClient client = new DefaultHttpClient();
@@ -59,19 +62,19 @@ public class SoundTouch {
             HttpResponse response = client.execute(post);
             Document document = getDocumentFromResponse(response);
 
-            //Log.d(TAG, documentToString(document));
-
             //see if we got at least one <item> in the response
             NodeList itemList = document.getElementsByTagName("item");
             if(itemList.getLength() > 0){
                 Element itemElem = (Element)itemList.item(0);
 
+                //get the track name, artist, albumart url & <ContentItem> from the XML response
                 String name = ((Element)itemElem.getElementsByTagName("itemName").item(0)).getTextContent();
                 String artist = ((Element)itemElem.getElementsByTagName("artistName").item(0)).getTextContent();
                 String logo = itemElem.getElementsByTagName("logo").item(0).getTextContent();
                 Node contentItem = itemElem.getElementsByTagName("ContentItem").item(0);
 
                 //Convert ContentItem element back to xml string
+                //We will just feed this back into the speaker to play this track
                 String contentItemXML = documentToString(contentItem);
 
                 //yay we have a ContentItem!
@@ -91,10 +94,15 @@ public class SoundTouch {
         return item;
     }
 
+    /**
+     * Gets the current volume of the SoundTouch
+     * @return int volume 0-100
+     */
     public int getVolume(){
         int volume = 0;
 
         HttpClient client = new DefaultHttpClient();
+        //send GET to /volume on SoundTouch
         HttpGet get = new HttpGet(url + "/volume");
 
         try {
@@ -112,6 +120,10 @@ public class SoundTouch {
         return volume;
     }
 
+    /**
+     * Set the volume of the SoundTouch.
+     * @param volume int 0-100
+     */
     public void setVolume(final int volume){
         new Thread(){
             @Override
@@ -122,8 +134,7 @@ public class SoundTouch {
 
                 try {
                     //volume XML
-                    String requestContent = "";
-                    requestContent += String.format("<volume>%d</volume>", volume);
+                    String requestContent = String.format("<volume>%d</volume>", volume);
                     post.setEntity(new StringEntity(requestContent));
 
                     //execute HTTP request
@@ -136,12 +147,16 @@ public class SoundTouch {
         }.start();
     }
 
+    /**
+     * Play a track on SoundTouch. Sends the ContentItem xml that we got from search() back to the speaker.
+     * @param item ContentItem to play
+     */
     public void play(final ContentItem item){
         new Thread(){
             @Override
             public void run(){
                 HttpClient client = new DefaultHttpClient();
-                //send POST to /volume on the SoundTouch
+                //send POST to /select on the SoundTouch
                 HttpPost post = new HttpPost(url + "/select");
 
                 try {
@@ -158,6 +173,11 @@ public class SoundTouch {
         }.start();
     }
 
+    /**
+     * Check if the speaker is currently playing something (and not paused)
+     * Sends a request to /now_playing and checks if the <playStatus> tag has the value "PLAY_STATE"
+     * @return boolean, whether the speaker is playing something
+     */
     public boolean isPlaying(){
         HttpClient client = new DefaultHttpClient();
         HttpGet get = new HttpGet(url+"/now_playing");
@@ -177,12 +197,24 @@ public class SoundTouch {
         return false;
     }
 
+    /**
+     * Converts an HttpResponse into a Document object
+     * @param response HttpResponse
+     * @return Document
+     * @throws Exception
+     */
     private Document getDocumentFromResponse(HttpResponse response) throws Exception{
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         return dBuilder.parse(response.getEntity().getContent());
     }
 
+    /**
+     * Converts a xml Node back into a xml string
+     * @param node Node
+     * @return xml string
+     * @throws Exception
+     */
     private String documentToString(Node node) throws Exception{
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         StreamResult result = new StreamResult(new StringWriter());
