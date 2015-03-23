@@ -1,5 +1,7 @@
 package com.chickenbellyfinn.soundtap;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -8,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -182,10 +185,33 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            showDeviceDialog();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showDeviceDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        final EditText input = new EditText(this);
+
+        builder.setTitle("Enter SoundTouch IP")
+                .setView(input)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setTitle("SoundTouch ("+input.getText().toString()+")");
+                        soundTouch = new SoundTouch(input.getText().toString()); //new SoundTouch client
+                        updateVolume();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //does nothing
+                    }
+                }).show();
     }
 
     /**
@@ -349,6 +375,8 @@ public class MainActivity extends ActionBarActivity {
         playlistView.setVisibility(View.GONE);
         emptyMessage.setVisibility(View.VISIBLE);
 
+        VibrateBPMThread.startTapping(this, bpm); //start vibrating the phone
+
         //Network operation, so start a new thread
         new Thread(){
             @Override
@@ -401,6 +429,9 @@ public class MainActivity extends ActionBarActivity {
 
                 //re-enable the BPM tapping button
                 allowTapping();
+
+                //stop vibrating the phone
+                VibrateBPMThread.stopTapping();
             }
         }.start();
     }
