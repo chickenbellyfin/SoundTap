@@ -321,6 +321,10 @@ public class MainActivity extends ActionBarActivity {
      * @param item
      */
     private void playItem(final ContentItem item){
+        
+        //stop vibrating the phone
+        VibrateBPMThread.stopTapping();
+        
         //ensure that this runs on the UI thread
         runOnUiThread(new Runnable() {
             @Override
@@ -429,9 +433,6 @@ public class MainActivity extends ActionBarActivity {
 
                 //re-enable the BPM tapping button
                 allowTapping();
-
-                //stop vibrating the phone
-                VibrateBPMThread.stopTapping();
             }
         }.start();
     }
